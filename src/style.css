@@ -1,0 +1,828 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  /* 日式简约极简色彩体系 (Japanese Minimalist Aesthetic) */
+  --bg-main: #fcfbf9;          /* 米白/和纸基底 (Washi Off-White) */
+  --bg-surface: #ffffff;       /* 纯白卡片 */
+  --bg-sidebar: #f5f3ef;       /* 淡灰褐/浅木色 */
+  --border-subtle: #e6e2dc;    /* 柔和边界线 */
+  --text-primary: #2b2b2b;     /* 墨黑 (Sumiko Black) */
+  --text-secondary: #6e6b66;   /* 苔灰 (Moss Grey) */
+  --text-muted: #9e9a93;       /* 浅木灰 */
+  
+  /* 品牌与点缀色 (Wabi-Sabi Accents) */
+  --accent-indigo: #2c3e50;    /* 靛蓝 (Aizome Indigo) */
+  --accent-blue: #4a6fa5;      /* 蓝灰 */
+  --accent-matcha: #5b7065;    /* 抹茶绿 */
+  --accent-vermilion: #b85b4f; /* 朱红点缀 (Shu-iro) */
+  
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, 'Courier New', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* 顶部 Header: 简约风 */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2.5rem;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.header-title h1 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.api-key-box {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.api-key-box input {
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 0.35rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  width: 200px;
+}
+
+.api-key-box button {
+  background: var(--accent-indigo);
+  color: #fff;
+  border: none;
+  padding: 0.35rem 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: opacity 0.2s;
+}
+
+.api-key-box button:hover {
+  opacity: 0.85;
+}
+
+/* 主布局 */
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 左侧栏 */
+.sidebar {
+  width: 320px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  padding: 1.8rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
+  overflow-y: auto;
+}
+
+.panel-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 1.2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.panel-card h3 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.8rem;
+  color: var(--text-primary);
+  border-left: 3px solid var(--accent-indigo);
+  padding-left: 0.5rem;
+}
+
+.scholar-search-box {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.scholar-search-box input {
+  flex: 1;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.scholar-search-box button {
+  background: var(--accent-indigo);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.scholar-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.scholar-card {
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 0.6rem;
+  font-size: 0.75rem;
+}
+
+.scholar-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 0.3rem;
+}
+
+.scholar-meta {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  margin-bottom: 0.4rem;
+}
+
+.scholar-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.import-paper-btn {
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.scholar-link-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: 3px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.no-results-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.panel-hint {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+}
+
+/* 日式 PDF 上传组件 */
+.pdf-upload-box {
+  position: relative;
+  border: 1px dashed #c8c3b9;
+  border-radius: 6px;
+  padding: 1.2rem 0.8rem;
+  text-align: center;
+  background: var(--bg-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pdf-upload-box:hover {
+  border-color: var(--accent-indigo);
+  background: #f7f5f0;
+}
+
+.pdf-upload-box input[type="file"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pdf-upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pdf-icon {
+  font-size: 1.5rem;
+}
+
+.upload-text {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.upload-subtext {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.pdf-status {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--accent-matcha);
+  word-break: break-all;
+}
+
+/* 模式选择器 */
+.mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.mode-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-surface);
+}
+
+.mode-card:hover {
+  border-color: var(--accent-indigo);
+}
+
+.mode-card.active {
+  border-color: var(--accent-indigo);
+  background: #f0f3f6;
+}
+
+.mode-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+
+.mode-name {
+  font-size: 0.90rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.temp-badge {
+  font-size: 0.72rem;
+  background: var(--accent-indigo);
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.mode-desc {
+  font-size: 0.80rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.ten-dim-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+}
+
+.dim-tag {
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  line-height: 1.25;
+}
+
+.dim-tag:hover {
+  border-color: var(--accent-indigo);
+  color: var(--text-primary);
+}
+
+/* 测试案例 */
+.test-cases {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.test-btn {
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 0.55rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.test-btn:hover {
+  border-color: var(--accent-indigo);
+  background: var(--bg-surface);
+}
+
+/* 聊天主区域 */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-main);
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 2.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
+}
+
+.welcome-box {
+  text-align: center;
+  max-width: 540px;
+  margin: 3.5rem auto;
+  padding: 2.5rem;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.welcome-box h2 {
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin-bottom: 0.8rem;
+  color: var(--text-primary);
+}
+
+.welcome-box p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.quick-tips {
+  font-size: 0.8rem;
+  color: var(--accent-indigo);
+}
+
+/* 消息气泡 - 日式简洁 */
+.message {
+  display: flex;
+  gap: 1rem;
+  max-width: 82%;
+}
+
+.message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-sidebar);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.message-content {
+  background: var(--bg-surface);
+  padding: 1.1rem 1.3rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  font-size: 0.96rem;
+  line-height: 1.65;
+  color: var(--text-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.015);
+}
+
+.message.user .message-content {
+  background: #f0f3f6;
+  border-color: #d0d7de;
+}
+
+/* Markdown 日式精美排版 */
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.90rem;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border-subtle);
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: var(--bg-sidebar);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--accent-indigo);
+  padding-left: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0.9rem 0;
+  background: #f7f6f3;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  background: #f4f1ea;
+  border: 1px solid #e1dcd3;
+  padding: 0.18rem 0.45rem;
+  border-radius: 4px;
+  color: #2c3e50;
+  font-size: 0.85rem;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+.markdown-body pre {
+  font-family: var(--font-mono);
+  background: #f7f5f0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  overflow-x: auto;
+  margin: 0.9rem 0;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+/* 输入框区域 */
+.input-container {
+  padding: 1.2rem 2rem 1.5rem 2rem;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.input-container textarea {
+  width: 100%;
+  height: 85px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-primary);
+  padding: 0.8rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: none;
+  line-height: 1.45;
+}
+
+.input-container textarea:focus {
+  outline: none;
+  border-color: var(--accent-indigo);
+}
+
+.input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mode-indicator {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.input-actions button {
+  background: var(--accent-indigo);
+  color: white;
+  border: none;
+  padding: 0.55rem 1.4rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.input-actions button:hover {
+  opacity: 0.88;
+}
+
+/* 流式生成光标 */
+.message-content.streaming::after {
+  content: '▌';
+  display: inline-block;
+  color: var(--accent-indigo);
+  animation: blink-cursor 0.75s step-end infinite;
+  margin-left: 2px;
+  font-size: 0.9em;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* scholar / import 按钮 hover 过渡 */
+.import-paper-btn:hover {
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+
+.scholar-link-btn:hover {
+  background: var(--bg-sidebar);
+  transition: background 0.2s;
+}
+
+/* 拖拽上传高亮样式 */
+.pdf-upload-box.drag-over {
+  border-color: var(--accent-indigo) !important;
+  background: #edf2f7 !important;
+  transform: scale(1.01);
+}
+
+.pdf-file-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #f0f5f2;
+  border: 1px solid #d2e3d8;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--accent-matcha);
+}
+
+.clear-pdf-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0 0.2rem;
+}
+.clear-pdf-btn:hover {
+  color: var(--accent-vermilion);
+}
+
+/* 消息头部与操作栏 */
+.message-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 86%;
+}
+
+.message.user .message-wrapper {
+  align-items: flex-end;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  padding: 0 0.2rem;
+}
+
+.message-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+
+.message:hover .message-actions {
+  opacity: 1;
+}
+
+.msg-action-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.15s ease;
+}
+
+.msg-action-btn:hover {
+  border-color: var(--accent-indigo);
+  color: var(--text-primary);
+  background: var(--bg-sidebar);
+}
+
+/* 顶部操作区增强 */
+.chat-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 2.5rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.toolbar-btn {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+  border-color: var(--accent-vermilion);
+  color: var(--accent-vermilion);
+}
+
+/* Toast 提示 */
+.app-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: rgba(43, 43, 43, 0.92);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 9999;
+  animation: fadeInOut 2.4s ease forwards;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(10px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+/* KaTeX 公式样式调优 */
+.katex-display {
+  margin: 0.8rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.4rem 0;
+}
+
+.katex {
+  font-size: 1.05em;
+  font-family: KaTeX_Main, 'Times New Roman', serif;
+}
+
+.markdown-body table .katex {
+  font-size: 0.95em;
+}
+
+/* 精读/泛读模式切换引导卡片 */
+.mode-switch-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #edf2f7 100%);
+  border: 1px dashed var(--accent-blue);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin: 0.6rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.mode-switch-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--accent-indigo);
+}
+
+.mode-switch-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.quick-action-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.chip-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-blue);
+  color: var(--accent-indigo);
+  padding: 0.35rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.chip-btn:hover {
+  background: var(--accent-indigo);
+  color: #ffffff;
+  border-color: var(--accent-indigo);
+  transform: translateY(-1px);
+}
