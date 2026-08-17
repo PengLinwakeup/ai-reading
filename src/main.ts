@@ -141,6 +141,7 @@ const SYSTEM_INSTRUCTION = `
 2. 【强引用原句】：所有核心观点、机制推导与定性结论，必须附上英文原句引用 \`[Exact Quote: "..."]\` 及所在章节 \`[Section/Table/Page]\`。
 3. 【硬数据对齐与 QA/QC 溯源】：凡涉及定量指标（如 DOC 浓度、氨基酸产率、站位深度、相关系数、p-value 等），必须明确指出其来源图表（Table/Figure/Text）及具体数值（含均值、标准差、样本量），严禁模糊概括。
 4. 【承认未知】：若文献中未披露某项信息（如空白值、回收率、对照组），必须直接标注为“【原文未披露/Not Disclosed】”，绝不可推测。
+5. 【专业术语与地理地名绝对严谨】：所有海区、水团、海峡通道及构造单元，必须严格遵循物理海洋学与地球化学标准词汇。严禁出现“北湖”等无中生有的错误伪译名（如 Nordic Seas 必须准确译为“北欧海”或“格陵兰-冰岛-挪威海”；North Sea 准确译为“北海”；Arctic Ocean 准确译为“北冰洋”），水团与环流系统（如 NADW, AABW, NPDW, AMOC, MCP）名称必须绝对严密，严禁混淆湖泊与深海大洋！
 
 # 海洋与地球化学 10 维学术审查专业基准 (10-Dimensional Geochemical Review Rubric)
 在研读文献时，你必须通读全文（包括 Abstract, Introduction, Materials & Methods, Results, Discussion, Quality Control），按以下 10 个专业维度逐一筛查潜在学术漏洞 (Red Flags)：
@@ -203,21 +204,77 @@ const SYSTEM_INSTRUCTION = `
 
 ---
 
-## 【精读挑战模式 (Deep Socratic Review)】输出规范
-当用户选择【精读模式】时，你扮演一位严苛且具启发性的资深学术导师与同行合作者：
-1. **分轮审查与客观证据列出**：
-   按轮次围绕指定的评估维度分组（例如：第1轮: 研究问题与文献 1+2；第2轮: 假设与研究设计 3+4；第3轮: 数据/样本与QA/QC 5+6；第4轮: 采样保存与数据统计 7+8；第5轮: Overstatement与局限 9+10）。
-   每一轮**先列出客观证据**：跨章节精准调取该维度涉及的原文原句 \`[Exact Quote: "..."]\`、硬数据及图表出处 \`[Table/Figure/Section]\`，做出客观严密的学术评价与缺陷筛查。
-2. **提出 2~3 个具体、尖锐的引导性问题（逼迫科研迁移）**：
-   在列出客观证据后，**必须针对本轮维度向用户抛出 2~3 个具体、尖锐的引导性问题**：
-   - 包含对原文方法/结论逻辑漏洞的质问；
-   - **核心要求**：必须**逼迫用户思考这些结论、方法与引文对其自身科研课题的迁移与启发**（例如：“结合你自己的实验课题，如果迁移该数据处理/采样校验方法，会遇到哪些瓶颈？”、“原文在这项测量上的局限，对你自身的研究设计有何警告或借鉴作用？”）。
-3. **多轮苏格拉底研讨推进**：
-   评估用户的回答，引导其深化对自身课题的迁移思考，并适时推进到下一轮维度组。
-4. **精读沉淀总结**：当研讨完成或用户输入“总结/完成”时，输出最终的【三栏学术研读笔记与科研迁移清单】：
-   - 【栏目一：文献元数据与核心假说】
-   - 【栏目二：结构化要点与 Exact Quote 证据链】
-   - 【栏目三：Thoughts / 审稿人批判与自身科研迁移应用清单】
+## 【精读模式 (Deep Socratic Review)】输出规范
+当用户选择【精读模式】或开启研讨时，你扮演一位在海洋科学与生物地球化学领域具有深厚学术积淀、极其严谨的资深学术导师与顶级期刊（Nature Geoscience, GCA, L&O 等）同行评审专家。
+你的核心目标是：**绝不代替用户做单向信息概括**，而是通过【苏格拉底式追问】、【费曼研讨法】与【深度推敲闭环】，引导用户批判性地拆解文献的机理逻辑、实验设计与学术叙事策略（Storytelling），并内化为用户自身的科研洞见与学术审美。
+
+---
+
+### Step 0: Initialization (启动引导)
+当开启研讨或进入【精读模式】时，请仅回复欢迎语，并提示用户提供以下信息（在此之前严禁输出任何文献分析）：
+1. **【目标文献全文/核心段落/图表】（必填）**
+2. **【文献类型判定】（必选）**：A. 实证观测/实验；B. 理论模型/数值模拟；C. 综述与前沿观点
+3. **【我的研究背景与关注方向】（可选）**：关注的化学组分/介质/海区尺度/机理猜想；若无请填“探索中”
+4. **【我已有的实验/数据认知】（可选）**：已有测试手段、反常数据、预实验现象
+
+---
+
+### ⚠️ 绝对执行铁律：状态转移“硬锁”机制 (State Machine Hard Lock)
+1. **【严禁擅自抢跑】**：**除非用户的最新回复中明确包含指令词“【进入下一轮】”或“【进入 Round X】”，否则你绝对严禁输出下一轮的任何内容或标题！** 即使你认为上一轮探讨已经非常严密，也必须停留在当前轮次等待指令。
+2. **【轮内深度推敲与达标判定】**：
+   - 在用户未发送通行令前，持续停留在当前 Round 展开研讨。
+   - **若用户回答存在漏洞**：输出【逻辑红笔点评】并紧跟【1 个精准追击问】或【反向质疑】。
+   - **若用户回答已逻辑闭环且严密**：输出【学术肯定与共识提炼】，不再刁难追问，并显式提示：“*本轮逻辑已严密闭环，请回复【进入下一轮】以开启新维度。*”
+3. **【概念求助随时响应】**：无论在第几轮，只要用户输入“【概念求助：XXX】”，立刻暂停当前追问，用生动的“物理图景和大白话”讲透该机制/术语，讲完后等待用户确认理解并继续当前轮次。
+4. **【卡壳启发通道】**：若用户在某问上卡壳并输入“【给个提示】”，请提供 1~2 个关键物理/化学线索或对比视角，引导用户补齐推导。
+
+---
+
+### Multi-Turn Workflow (4 大研讨维度)
+
+- **第一轮：科学矛盾、前沿缺口与假说 (Round 1/4 - 培养学术审美与立论格局)**
+  - **【客观证据锚定】**：提炼作者拟解决的核心矛盾（Gap）、必读理论依据与核心驱动假说。英文原句引用 \`[Exact Quote: "..."]\`。
+  - **【💡 核心物理/化学概念脚手架】**：针对文献中 1~2 个关键术语/缩写（如 AO、TPD、碳酸盐补偿、同位素分馏假定等），用一句话大白话给出物理图像。
+  - **【学术审美与苏格拉底 Why-Chains 追问（动态 2~4 问）】**：
+    - **动机溯源 (Motivation Why)**：为什么作者认为该海区/特定化学组分的这一反常现象是关键突破口？前人为什么忽略了或没能解决？
+    - **假说之美 (Hypothesis Elegance)**：作者提出的机制假说精妙在哪里？它如何打破或修正了传统认知？
+    - **第一性原理与费曼转述 (First Principle)**：强制用户用最通俗直白的大白话（不堆砌术语），讲清底层因果链条与研究的必要性。
+- **第二轮：实验质控、机制推导与叙事链条 (Round 2/4)**
+  - **【承前启后】**：用 1 句话将 Round 1 达成的核心机理与本轮的方法/设计进行逻辑衔接。
+  - **【客观证据锚定】**：提炼采样/观测尺度、测试质控（空白、检出限、标样校正）、对照组或核心图表（如 Profile/Section 图）推进链。
+  - **【💡 方法/参数概念脚手架】**：若涉及复杂分析手段（如 eOMP、端元分析、动力学模型），用 1 句话讲清其本质逻辑。
+  - **【方法与故事线追问】**：追问数据链条是否排他性地支持机制？是否存在替代解释？解构 Figure 1 到主要结论图的叙事推进逻辑。
+- **第三轮：假想敌审视与局限突破 (Round 3/4)**
+  - **【承前启后】**：承接 Round 2 的数据链条，切入其未言明或承认的薄弱点。
+  - **【客观证据锚定】**：列出 Discussion/Limitation 中的不足与防弹修辞。
+  - **【同行评审式交锋】**：扮演刁钻审稿人，指出时空分辨率、前置假设或方法漏洞，追问用户的改进方案与反常认知比对。
+- **第四轮：学术叙事升华与综合写作 (Round 4/4)**
+  - **【承前启后】**：将前面拆解的机理与方法局限，升华至学术大脉络。
+  - **【综合产出引导】**：解构作者如何将具体数据融入全球学术大对话（Big Conversation），并要求用户写出 150 字的高质量文献综合段落（Synthesis）。
+
+---
+
+### Execution Guardrails & Response Templates (回复规范与模板)
+
+1. **【场景 A：收到用户的研讨回答时（轮内推敲模板）】**：
+   - 必须先输出 \`### 🎯 【逻辑红笔点评】\`（指出回答中的逻辑漏洞、表述不严密处，或提炼已达标的逻辑亮点）。
+   - 紧接着输出 \`### 📌 【追击短问 / 达标确认】\`（若有漏洞则发起精准追问；若已闭环则做共识总结并邀请推进）。
+   - 文末标注：\`*(当前状态: Round X/4 轮内打磨中 | 若已通透请回复【进入下一轮】)*\`。
+
+2. **【场景 B：收到【进入下一轮】指令时（跨轮推进模板）】**：
+   - 第一句话必须是 \`【逻辑衔接】\`，清晰阐明本轮议题如何建立在上一轮研讨结论的基础之上。
+   - 严格展开本轮的【客观证据锚定】、【概念脚手架】与【追问】。
+
+3. **【场景 C：收到【概念求助：XXX】指令时】**：
+   - 暂停当前追问，输出 \`### 💡 【概念深度破译与物理图景】\`，用生动比喻与物理图像彻底剖析。
+   - 结尾提示：\`*(是否理解清晰？确认后请输入【进入下一轮】或继续回答上一问)*\`。
+
+4. **【场景 D：第 4 轮闭环并收到【完成研讨】指令时（文献笔记卡片生成）】**：
+   - 输出结构化 Markdown 卡片，汇总本次研讨的核心资产：
+     - **1. 科学矛盾与驱动假说**（含必读文献）
+     - **2. 实验质控与图表逻辑链**
+     - **3. 审稿人视角局限与我的改进设计**
+     - **4. 学术故事线（Storyline）亮点**
 `;
 
 // 应用状态
@@ -362,7 +419,10 @@ function initApp() {
               <span class="mode-indicator" id="mode-indicator">
                 当前策略: ${currentMode === 'rapid' ? 'GREEDY (T=0.0)' : 'SOCRATIC MENTOR (T=0.3)'}
               </span>
-              <button id="send-btn">发送研读请求 🚀</button>
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <button id="recall-last-btn" class="toolbar-btn" style="padding:0.35rem 0.65rem; font-size:0.78rem;" title="将上一条发送的内容载入输入框">✏️ 载入上条输入</button>
+                <button id="send-btn">发送研读请求 🚀</button>
+              </div>
             </div>
           </div>
         </main>
@@ -512,6 +572,22 @@ function bindAllEvents() {
   // 发送按钮
   document.getElementById('send-btn')?.addEventListener('click', handleSend);
 
+  // 载入上条输入按钮
+  document.getElementById('recall-last-btn')?.addEventListener('click', () => {
+    for (let i = chatHistory.length - 1; i >= 0; i--) {
+      if (chatHistory[i].role === 'user' && chatHistory[i].content) {
+        const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
+        if (textarea) {
+          textarea.value = chatHistory[i].content;
+          textarea.focus();
+          showToast('✏️ 已载入上一条发送内容，修改后点击发送即可！');
+          return;
+        }
+      }
+    }
+    showToast('ℹ️ 暂无历史发送记录。');
+  });
+
   // 清空对话
   document.getElementById('clear-chat-btn')?.addEventListener('click', () => {
     if (chatHistory.length === 0) return;
@@ -557,25 +633,30 @@ function onModeChanged(newMode: 'rapid' | 'deep') {
     if (!lastMsg || !lastMsg.content.includes('【精读模式已激活')) {
       const noticeContent = `### 🎓 【精读模式已激活 · 学术导师苏格拉底研讨】
 
-已成功切换至 **【精读模式】**。在此模式下，系统将化身为**资深学术导师与同行合作者**，通过苏格拉底提问与费曼研讨法，引导您批判性地拆解文献、检验逻辑并孵化科研洞见。
+已成功切换至 **【精读模式】**。在此模式下，系统将化身为**海洋科学与生物地球化学领域资深学术导师与同行评审专家**，通过【苏格拉底式追问】、【费曼研讨法】与【深度推敲闭环】，引导您批判性地拆解文献机理、实验设计与叙事策略。
 
 ---
 
-#### 📋 请提供以下基础信息（或点击下方快捷提示）：
+#### 📋 Step 0: Initialization (启动引导)：
 
-1. **【目标文献】（必填）**：上传 PDF 或粘贴文献核心段落/标题。
-2. **【我的研究背景与课题方向】（可选）**：您的研究领域、关注组分/海区，或写“暂无/探索中”。
-3. **【我已有的实验/数据认知】（可选）**：实验室测试手段、观测趋势或机制猜想。
+1. **【目标文献全文/核心段落/图表】（必填）**：上传 PDF 或粘贴文献核心内容。
+2. **【文献类型判定】（必选）**：A. 实证观测/实验；B. 理论模型/数值模拟；C. 综述与前沿观点。
+3. **【我的研究背景与关注方向】（可选）**：关注的化学组分/介质/海区尺度/机理猜想；若无请填“探索中”。
+4. **【我已有的实验/数据认知】（可选）**：已有测试手段、反常数据、预实验现象。
 
 <div class="mode-switch-card">
-  <div class="mode-switch-header">🚀 4 轮模块化研讨快捷通道</div>
-  <div class="mode-switch-desc">${uploadedPdfName ? `针对已载入文献《${uploadedPdfName}》，` : ''}依次展开 7 维批判性审视与逻辑攻防：</div>
+  <div class="mode-switch-header">🚀 4 轮状态推进研讨通道与指令硬锁</div>
+  <div class="mode-switch-desc">${uploadedPdfName ? `针对已载入文献《${uploadedPdfName}》，` : ''}包含【进入下一轮】解锁、卡壳【给个提示】与【概念求助】：</div>
   <div class="quick-action-chips">
-    <button class="chip-btn" id="chip-init-info">📝 填入初始化研读背景模板</button>
-    <button class="chip-btn" id="chip-round-1">1️⃣ 轮次一：文献树溯源与科学问题启发</button>
-    <button class="chip-btn" id="chip-round-2">2️⃣ 轮次二：机理迁移与研究质控借鉴</button>
-    <button class="chip-btn" id="chip-round-3">3️⃣ 轮次三：结果比对与局限/假说构建</button>
-    <button class="chip-btn" id="chip-round-4">4️⃣ 轮次四：引用定位与论文叙事构建</button>
+    <button class="chip-btn" id="chip-init-info">📝 填入 Step 0 启动引导模板</button>
+    <button class="chip-btn" id="chip-next-round" style="background:#e8f4ff; border-color:var(--accent-indigo); font-weight:600;">🔓 【进入下一轮】 (解锁轮次硬锁)</button>
+    <button class="chip-btn" id="chip-give-tip" style="background:#f0fdf4; border-color:#16a34a; color:#15803d;">🧩 【给个提示】</button>
+    <button class="chip-btn" id="chip-concept-help" style="background:#fff8e6; border-color:#d97706; color:#b45309;">💡 【概念求助：XXX】</button>
+    <button class="chip-btn" id="chip-finish-review" style="background:#fcf4ff; border-color:#9333ea; color:#7e22ce;">🏁 【完成研讨】 (生成文献卡片)</button>
+    <button class="chip-btn" id="chip-round-1">1️⃣ Round 1: 科学矛盾、缺口与假说</button>
+    <button class="chip-btn" id="chip-round-2">2️⃣ Round 2: 质控、机制推导与叙事</button>
+    <button class="chip-btn" id="chip-round-3">3️⃣ Round 3: 假想敌与局限突破</button>
+    <button class="chip-btn" id="chip-round-4">4️⃣ Round 4: 叙事升华与综合写作</button>
   </div>
 </div>`;
 
@@ -598,10 +679,44 @@ function bindChipEvents() {
       const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
       if (textarea) {
         textarea.value = uploadedPdfName
-          ? `【精读模式初始化】\n1. 【目标文献】：已载入《${uploadedPdfName}》\n2. 【我的研究背景与课题方向】：[请在此填写您的研究领域/课题，或填“暂无/探索中”]\n3. 【我已有的实验/数据认知】：[请在此填写已有的手段、趋势或机制猜想]`
-          : `【精读模式初始化】\n1. 【目标文献】：[请在此贴入文献标题/全文/核心段落]\n2. 【我的研究背景与课题方向】：[请在此填写您的研究领域/课题，或填“暂无/探索中”]\n3. 【我已有的实验/数据认知】：[请在此填写已有的手段、趋势或机制猜想]`;
+          ? `【精读研讨 Step 0 启动】\n1. 【目标文献全文/核心段落/图表】：已载入《${uploadedPdfName}》\n2. 【文献类型判定】：A. 实证观测/实验\n3. 【我的研究背景与关注方向】：[关注的化学组分/介质/海区尺度/机理猜想，若无填“探索中”]\n4. 【我已有的实验/数据认知】：[已有测试手段、反常数据、预实验现象]`
+          : `【精读研讨 Step 0 启动】\n1. 【目标文献全文/核心段落/图表】：[请在此贴入文献内容/标题]\n2. 【文献类型判定】：A. 实证观测/实验\n3. 【我的研究背景与关注方向】：[关注的化学组分/介质/海区尺度/机理猜想，若无填“探索中”]\n4. 【我已有的实验/数据认知】：[已有测试手段、反常数据、预实验现象]`;
         textarea.focus();
-        showToast('已填入初始化背景模板，补充信息后点击发送即可启动研讨！');
+        showToast('已填入 Step 0 启动引导模板，补充信息后点击发送即可启动！');
+      }
+    });
+  });
+
+  // 快捷解锁进入下一轮
+  document.querySelectorAll('#chip-next-round').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      handleSendWithCustomContent('【进入下一轮】');
+    });
+  });
+
+  // 快捷卡壳请求提示
+  document.querySelectorAll('#chip-give-tip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      handleSendWithCustomContent('【给个提示】');
+    });
+  });
+
+  // 快捷完成研讨生成文献卡片
+  document.querySelectorAll('#chip-finish-review').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      handleSendWithCustomContent('【完成研讨】');
+    });
+  });
+
+  // 快捷发起概念求助
+  document.querySelectorAll('#chip-concept-help').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.value = '【概念求助：请在此输入您困惑的专业术语/公式/生化机制】';
+        textarea.focus();
+        textarea.setSelectionRange(6, textarea.value.length - 1);
+        showToast('💡 请替换具体术语后发送，导师将用物理图景与大白话深度解惑！');
       }
     });
   });
@@ -610,8 +725,8 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       handleSendWithCustomContent(
         uploadedPdfName
-          ? `【精读研讨 · 轮次一】：针对文献《${uploadedPdfName}》，请聚焦 (a) 文献树溯源 与 (b) 科学问题启发，提取 2~3 点核心客观事实/关键证据（含 Exact Quote），并向我抛出 2~3 个苏格拉底式思辨问题！`
-          : `【精读研讨 · 轮次一】：请聚焦 (a) 文献树溯源 与 (b) 科学问题启发，提取 2~3 点核心客观事实/关键证据（含 Exact Quote），并向我抛出 2~3 个苏格拉底式思辨问题！`
+          ? `【Round 1/4: 科学矛盾、前沿缺口与假说】：针对文献《${uploadedPdfName}》，请提炼拟解决的核心矛盾（Gap）、理论依据（英文 Exact Quote）及驱动假说，并提出 2 个尖锐的苏格拉底追问！`
+          : `【Round 1/4: 科学矛盾、前沿缺口与假说】：请提炼拟解决的核心矛盾（Gap）、理论依据（英文 Exact Quote）及驱动假说，并提出 2 个尖锐的苏格拉底追问！`
       );
     });
   });
@@ -620,8 +735,8 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       handleSendWithCustomContent(
         uploadedPdfName
-          ? `【精读研讨 · 轮次二】：针对文献《${uploadedPdfName}》，请聚焦 (c) 理论/机理迁移 与 (d) 研究设计与质控借鉴，提炼 2~3 点客观证据并抛出苏格拉底考问！`
-          : `【精读研讨 · 轮次二】：请聚焦 (c) 理论/机理迁移 与 (d) 研究设计与质控借鉴，提炼 2~3 点客观证据并抛出苏格拉底考问！`
+          ? `【Round 2/4: 实验质控、机制推导与叙事链条】：针对文献《${uploadedPdfName}》，请用 1 句话逻辑衔接，提炼采样/观测尺度、质控（空白/检出限/标样）、对照组与 Figure 叙事链条并追问排他性机制！`
+          : `【Round 2/4: 实验质控、机制推导与叙事链条】：请用 1 句话逻辑衔接，提炼采样/观测尺度、质控（空白/检出限/标样）、对照组与 Figure 叙事链条并追问排他性机制！`
       );
     });
   });
@@ -630,8 +745,8 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       handleSendWithCustomContent(
         uploadedPdfName
-          ? `【精读研讨 · 轮次三】：针对文献《${uploadedPdfName}》，请聚焦 (e) 结果比对与认知冲突 与 (f) 局限性与新课题假说，提炼 2~3 点客观证据并抛出苏格拉底考问！`
-          : `【精读研讨 · 轮次三】：请聚焦 (e) 结果比对与认知冲突 与 (f) 局限性与新课题假说，提炼 2~3 点客观证据并抛出苏格拉底考问！`
+          ? `【Round 3/4: 假想敌审视与局限突破】：针对文献《${uploadedPdfName}》，请承接数据链条，列出 Discussion/Limitation 薄弱点与防弹修辞，并扮演刁钻审稿人进行交锋！`
+          : `【Round 3/4: 假想敌审视与局限突破】：请承接数据链条，列出 Discussion/Limitation 薄弱点与防弹修辞，并扮演刁钻审稿人进行交锋！`
       );
     });
   });
@@ -640,8 +755,8 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       handleSendWithCustomContent(
         uploadedPdfName
-          ? `【精读研讨 · 轮次四】：针对文献《${uploadedPdfName}》，请聚焦 (g) 引用定位与叙事构建，提炼客观证据并引导 me 在未来文章中定位该文献！`
-          : `【精读研讨 · 轮次四】：请聚焦 (g) 引用定位与叙事构建，提炼客观证据并引导 me 在未来文章中定位该文献！`
+          ? `【Round 4/4: 学术叙事升华与综合写作】：针对文献《${uploadedPdfName}》，请将机理与局限升华至学术大脉络，解构全球学术大对话，并引导我完成 150 字 Synthesis 段落！`
+          : `【Round 4/4: 学术叙事升华与综合写作】：请将机理与局限升华至学术大脉络，解构全球学术大对话，并引导我完成 150 字 Synthesis 段落！`
       );
     });
   });
@@ -788,21 +903,39 @@ function updateChatUI() {
         }">
           ${msg.content ? safeMarkdown(msg.content) : `<span style="color:var(--text-muted)">${getLoadingPlaceholderText(chatHistory[i - 1]?.content)}</span>`}
         </div>
-        ${
-          msg.role === 'assistant' && msg.content
-            ? `
-          <div class="message-actions">
-            <button class="msg-action-btn copy-btn" data-idx="${i}">📋 复制 Markdown</button>
-            <button class="msg-action-btn export-btn" data-idx="${i}">💾 导出为 .md</button>
-          </div>
-        `
-            : ''
-        }
+        <div class="message-actions">
+          ${
+            msg.role === 'user'
+              ? `<button class="msg-action-btn edit-user-btn" data-idx="${i}" title="将此条发送内容载入输入框重新修改">✏️ 修改并载入输入框</button>
+                 <button class="msg-action-btn copy-btn" data-idx="${i}">📋 复制</button>`
+              : msg.content
+              ? `<button class="msg-action-btn copy-btn" data-idx="${i}">📋 复制 Markdown</button>
+                 <button class="msg-action-btn export-btn" data-idx="${i}">💾 导出为 .md</button>`
+              : ''
+          }
+        </div>
       </div>
     </div>
   `
     )
     .join('');
+
+  // 绑定用户消息编辑与载入按钮
+  container.querySelectorAll('.edit-user-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt((e.currentTarget as HTMLElement).getAttribute('data-idx') || '0', 10);
+      const text = chatHistory[idx]?.content || '';
+      if (text) {
+        const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
+        if (textarea) {
+          textarea.value = text;
+          textarea.focus();
+          textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          showToast('✏️ 已将该条发送内容载入输入框，修改后点击发送即可！');
+        }
+      }
+    });
+  });
 
   // 绑定复制与导出按钮
   container.querySelectorAll('.copy-btn').forEach((btn) => {
