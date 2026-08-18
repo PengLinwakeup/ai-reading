@@ -826,3 +826,30 @@ body {
   border-color: var(--accent-indigo);
   transform: translateY(-1px);
 }
+
+/* 会话自动存档状态徽章与工具栏增强 */
+.session-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 12px;
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.session-status-badge.saving {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}

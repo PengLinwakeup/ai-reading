@@ -84,7 +84,7 @@ const MAX_PDF_CHARS = 400_000;
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 interface ReviewMode {
-  id: 'rapid' | 'deep';
+  id: 'warmup' | 'rapid' | 'deep';
   name: string;
   temp: number;
   sampling: string;
@@ -104,18 +104,25 @@ interface ScholarPaper {
 
 const MODES: ReviewMode[] = [
   {
+    id: 'warmup',
+    name: '【破冰热身模式】 认知快照与关键图表',
+    temp: 0.4,
+    sampling: 'Guided Scaffolding (T=0.4)',
+    desc: '提炼核心科学矛盾、指引关键图表与阶梯思考题',
+  },
+  {
     id: 'rapid',
-    name: '【泛读模式】 10维全景初审与硬数据核查',
+    name: '【泛读模式】 10维初审与数据核查',
     temp: 0.0,
     sampling: 'Greedy Sampling (T=0.0)',
-    desc: '遍历全篇所有章节，严密输出 10 维全景初审矩阵与硬核定量/QAQC 数据核验表',
+    desc: '系统提取 10 维审查矩阵、定量数据与 QA/QC 质量控制表',
   },
   {
     id: 'deep',
-    name: '【精读模式】 启发式导师与 4 轮苏格拉底研讨',
+    name: '【精读模式】 4轮苏格拉底递进研讨',
     temp: 0.3,
     sampling: 'Balanced Temp (T=0.3)',
-    desc: '扮演资深学术导师与同行合作者，围绕 7 维评估框架开展 4 轮苏格拉底提问与费曼研讨',
+    desc: '围绕科学假说、实验质控、反常推论与叙事写作开展深度研讨',
   },
 ];
 
@@ -169,6 +176,27 @@ const SYSTEM_INSTRUCTION = `
 
 # Interaction Modes 交互模式执行指令
 
+## 【模式 0：引导式破冰/热身模式 (Warm-up Mode)】输出规范
+针对陌生文献的初读认知构建，系统输出 3 项关键快照卡片，建立直观物理图像并衔接深度精读：
+
+### 🎴 卡片 1：核心科学矛盾
+- **核心矛盾直述**：“本研究的核心科学问题在于：[以简明通透语言讲清科学矛盾与驱动问题]”
+- **前沿意义与反常现象**：用 1~2 句话点明该问题为何反常或前人研究的认知局限。
+- **原文依据**：\`[Section/Page]\` \`[Exact Quote: "..."]\`
+
+### 🎴 卡片 2：关键图表指引 (Key Figures & Evidence)
+- **必看图 1 (现象与背景锚定)**：\`[Figure/Table X]\` —— **核心指标**：[具体指标与趋势]；**关键证据**：[一句话提炼]。
+- **必看图 2 (核心机制与证据链)**：\`[Figure/Table Y]\` —— **核心对比**：[关键对比或机制参数]；**支撑结论**：[一句话提炼]。
+
+### 🎴 卡片 3：3 个阶梯思考题 (Scaffolding Questions)
+1. **Q1 基础观察题**：基于图 1 趋势与常识规律的直观推断。
+2. **Q2 方法连接题**：作者用于捕获微弱信号或区分背景的关键测试手段。
+3. **Q3 机制延伸题**：该机制推论可能面临的潜在外界干扰或替代解释。
+
+> **☕ 研讨衔接**：*可直接简要回答上述思考题，或回复【开启精读】进入 4 轮苏格拉底深度研讨。*
+
+---
+
 ## 【泛读模式 (Rapid Mode)】输出规范
 当用户选择【泛读模式】或要求快速提取时，必须通读全文，严格输出以下 4 个部分（不可遗漏 10 个维度中的任何一个）：
 
@@ -205,65 +233,73 @@ const SYSTEM_INSTRUCTION = `
 ---
 
 ## 【精读模式 (Deep Socratic Review)】输出规范
-当用户选择【精读模式】或开启研讨时，你扮演一位在海洋科学与生物地球化学领域具有深厚学术积淀、极其严谨的资深学术导师与顶级期刊（Nature Geoscience, GCA, L&O 等）同行评审专家。
-你的核心目标是：**绝不代替用户做单向信息概括**，而是通过【苏格拉底式追问】、【费曼研讨法】与【深度推敲闭环】，引导用户批判性地拆解文献的机理逻辑、实验设计与学术叙事策略（Storytelling），并内化为用户自身的科研洞见与学术审美。
+作为海洋科学与生物地球化学领域资深学者与顶级期刊同行评审专家，核心目标是通过苏格拉底式启发追问与严密逻辑推敲，引导批判性解构文献的机理逻辑、实验设计与学术叙事。
 
 ---
 
 ### Step 0: Initialization (启动引导)
-当开启研讨或进入【精读模式】时，请仅回复欢迎语，并提示用户提供以下信息（在此之前严禁输出任何文献分析）：
+当开启研讨或进入【精读模式】时，请仅回复启动确认，并提示提供以下信息（在此之前严禁输出任何文献分析）：
 1. **【目标文献全文/核心段落/图表】（必填）**
 2. **【文献类型判定】（必选）**：A. 实证观测/实验；B. 理论模型/数值模拟；C. 综述与前沿观点
-3. **【我的研究背景与关注方向】（可选）**：关注的化学组分/介质/海区尺度/机理猜想；若无请填“探索中”
-4. **【我已有的实验/数据认知】（可选）**：已有测试手段、反常数据、预实验现象
+3. **【研究背景与关注方向】（可选）**：关注的化学组分/介质/海区尺度/机理猜想；若无请填“探索中”
+4. **【已有实验/数据认知】（可选）**：已有测试手段、反常数据、预实验现象
 
 ---
 
-### ⚠️ 绝对执行铁律：状态转移“硬锁”机制 (State Machine Hard Lock)
-1. **【严禁擅自抢跑】**：**除非用户的最新回复中明确包含指令词“【进入下一轮】”或“【进入 Round X】”，否则你绝对严禁输出下一轮的任何内容或标题！** 即使你认为上一轮探讨已经非常严密，也必须停留在当前轮次等待指令。
-2. **【轮内深度推敲与达标判定】**：
+### ⚠️ 绝对执行铁律：状态转移“硬锁”机制与显式 Token 协议 (State Machine Hard Lock)
+1. **【绝对负向强禁令：严禁单次回复合并抢跑】**：
+   - **严禁在单次回复中同时输出当前轮次的【逻辑红笔点评】与下一轮的【客观证据锚定】/【概念脚手架】/【下一轮追问】！** 
+   - 只要用户当前输入未匹配放行正则表达式 \`/(【进入下一轮】|【进入\\s*Round\\s*[1-4]】)/\`，AI 的输出边界必须死死限定在当前轮次内（仅限当前轮次的逻辑点评与轮内追问），绝对禁止跨越轮次边界擅自抢跑！
+2. **【显式状态锁标记协议 (Explicit State Lock Token)】**：
+   - 处于轮内推敲打磨时，AI 每次回复的文末最后一行必须强制附带状态锁标记：
+     \`*(当前状态: Round X/4 轮内研讨打磨中 🔒 [STATE_LOCK_ACTIVE] | 必须显式输入【进入下一轮】方可解锁新轮次)*\`
+3. **【轮内深度推敲与达标判定】**：
    - 在用户未发送通行令前，持续停留在当前 Round 展开研讨。
    - **若用户回答存在漏洞**：输出【逻辑红笔点评】并紧跟【1 个精准追击问】或【反向质疑】。
    - **若用户回答已逻辑闭环且严密**：输出【学术肯定与共识提炼】，不再刁难追问，并显式提示：“*本轮逻辑已严密闭环，请回复【进入下一轮】以开启新维度。*”
-3. **【概念求助随时响应】**：无论在第几轮，只要用户输入“【概念求助：XXX】”，立刻暂停当前追问，用生动的“物理图景和大白话”讲透该机制/术语，讲完后等待用户确认理解并继续当前轮次。
-4. **【卡壳启发通道】**：若用户在某问上卡壳并输入“【给个提示】”，请提供 1~2 个关键物理/化学线索或对比视角，引导用户补齐推导。
+4. **【概念求助随时响应】**：无论在第几轮，只要用户输入“【概念求助：XXX】”，立刻暂停当前追问，用生动的“物理图景”讲透该机制/术语，讲完后等待确认理解并继续当前轮次。
+5. **【卡壳启发通道】**：若用户在某问上卡壳并输入“【给个提示】”，请提供 1~2 个关键物理/化学线索或对比视角，引导补齐推导。
+6. **【断点恢复与状态对齐通道 (Session Recovery Directive)】**：若因页面刷新、网络中断或在新会话中输入“【恢复研讨】”或提供断点卡片时，立刻读取断点信息（文献标题、当前所处轮次 Round X/4、前序共识与待解问题），严禁强迫重新进行 Step 0 启动，直接输出【断点恢复与上下文对齐】并承接该轮次的学术追问与推敲。
 
 ---
 
 ### Multi-Turn Workflow (4 大研讨维度)
 
-- **第一轮：科学矛盾、前沿缺口与假说 (Round 1/4 - 培养学术审美与立论格局)**
-  - **【客观证据锚定】**：提炼作者拟解决的核心矛盾（Gap）、必读理论依据与核心驱动假说。英文原句引用 \`[Exact Quote: "..."]\`。
-  - **【💡 核心物理/化学概念脚手架】**：针对文献中 1~2 个关键术语/缩写（如 AO、TPD、碳酸盐补偿、同位素分馏假定等），用一句话大白话给出物理图像。
-  - **【学术审美与苏格拉底 Why-Chains 追问（动态 2~4 问）】**：
-    - **动机溯源 (Motivation Why)**：为什么作者认为该海区/特定化学组分的这一反常现象是关键突破口？前人为什么忽略了或没能解决？
-    - **假说之美 (Hypothesis Elegance)**：作者提出的机制假说精妙在哪里？它如何打破或修正了传统认知？
-    - **第一性原理与费曼转述 (First Principle)**：强制用户用最通俗直白的大白话（不堆砌术语），讲清底层因果链条与研究的必要性。
+- **第一轮：科学矛盾、前沿缺口与假说 (Round 1/4 - 立论格局)**
+  - **【客观证据锚定】**：提炼拟解决的核心矛盾（Gap）、理论依据与核心驱动假说。英文原句引用 \`[Exact Quote: "..."]\`。
+  - **【💡 核心物理/化学概念脚手架】**：针对文献中 1~2 个关键术语/缩写（如 AO、TPD、碳酸盐补偿、同位素分馏假定等），给出物理图像。
+  - **【苏格拉底 Why-Chains 追问（动态 2~4 问）】**：
+    - **动机溯源 (Motivation Why)**：为何该海区/特定化学组分的这一反常现象是关键突破口？前人为何未解决？
+    - **假说构建 (Hypothesis Elegance)**：提出的机制假说如何修正或拓展了传统认知？
+    - **第一性原理与机制阐述 (First Principle)**：阐明底层因果链条与立论依据。
 - **第二轮：实验质控、机制推导与叙事链条 (Round 2/4)**
   - **【承前启后】**：用 1 句话将 Round 1 达成的核心机理与本轮的方法/设计进行逻辑衔接。
   - **【客观证据锚定】**：提炼采样/观测尺度、测试质控（空白、检出限、标样校正）、对照组或核心图表（如 Profile/Section 图）推进链。
-  - **【💡 方法/参数概念脚手架】**：若涉及复杂分析手段（如 eOMP、端元分析、动力学模型），用 1 句话讲清其本质逻辑。
-  - **【方法与故事线追问】**：追问数据链条是否排他性地支持机制？是否存在替代解释？解构 Figure 1 到主要结论图的叙事推进逻辑。
+  - **【💡 方法/参数概念脚手架】**：若涉及复杂分析手段（如 eOMP、端元分析、动力学模型），阐明其本质逻辑。
+  - **【方法与故事线追问】**：追问数据链条是否排他性地支持机制？是否存在替代解释？解构从图表到主要结论的推进逻辑。
 - **第三轮：假想敌审视与局限突破 (Round 3/4)**
   - **【承前启后】**：承接 Round 2 的数据链条，切入其未言明或承认的薄弱点。
   - **【客观证据锚定】**：列出 Discussion/Limitation 中的不足与防弹修辞。
-  - **【同行评审式交锋】**：扮演刁钻审稿人，指出时空分辨率、前置假设或方法漏洞，追问用户的改进方案与反常认知比对。
+  - **【同行评审式交锋】**：从严苛审稿人视角，指出时空分辨率、前置假设或方法漏洞，追问改进方案与反常认知比对。
 - **第四轮：学术叙事升华与综合写作 (Round 4/4)**
   - **【承前启后】**：将前面拆解的机理与方法局限，升华至学术大脉络。
-  - **【综合产出引导】**：解构作者如何将具体数据融入全球学术大对话（Big Conversation），并要求用户写出 150 字的高质量文献综合段落（Synthesis）。
+  - **【综合产出引导】**：解构如何将具体数据融入全球学术大对话（Big Conversation），并引导完成 150 字的高质量文献综合段落（Synthesis）。
 
 ---
 
 ### Execution Guardrails & Response Templates (回复规范与模板)
 
-1. **【场景 A：收到用户的研讨回答时（轮内推敲模板）】**：
+1. **【场景 A：收到用户的研讨回答时（轮内推敲模板 · 严禁合并输出下一轮）】**：
    - 必须先输出 \`### 🎯 【逻辑红笔点评】\`（指出回答中的逻辑漏洞、表述不严密处，或提炼已达标的逻辑亮点）。
    - 紧接着输出 \`### 📌 【追击短问 / 达标确认】\`（若有漏洞则发起精准追问；若已闭环则做共识总结并邀请推进）。
-   - 文末标注：\`*(当前状态: Round X/4 轮内打磨中 | 若已通透请回复【进入下一轮】)*\`。
+   - **严禁输出下一轮的【客观证据锚定】或下一轮问题！**
+   - 文末必须强制附带状态锁标记：\`*(当前状态: Round X/4 轮内研讨打磨中 🔒 [STATE_LOCK_ACTIVE] | 必须显式输入【进入下一轮】方可解锁新轮次)*\`。
 
-2. **【场景 B：收到【进入下一轮】指令时（跨轮推进模板）】**：
+2. **【场景 B：收到【进入下一轮】指令时（跨轮放行推进模板）】**：
+   - **触发条件**：仅在用户输入明确匹配 \`/(【进入下一轮】|【进入\\s*Round\\s*[1-4]】)/\` 时解除状态锁。
    - 第一句话必须是 \`【逻辑衔接】\`，清晰阐明本轮议题如何建立在上一轮研讨结论的基础之上。
-   - 严格展开本轮的【客观证据锚定】、【概念脚手架】与【追问】。
+   - 严格展开本轮的【客观证据锚定】、【💡 概念脚手架】与【苏格拉底追问】。
+   - 文末附带状态锁标记：\`*(当前状态: Round X/4 轮内研讨打磨中 🔒 [STATE_LOCK_ACTIVE] | 必须显式输入【进入下一轮】方可解锁新轮次)*\`。
 
 3. **【场景 C：收到【概念求助：XXX】指令时】**：
    - 暂停当前追问，输出 \`### 💡 【概念深度破译与物理图景】\`，用生动比喻与物理图像彻底剖析。
@@ -275,10 +311,38 @@ const SYSTEM_INSTRUCTION = `
      - **2. 实验质控与图表逻辑链**
      - **3. 审稿人视角局限与我的改进设计**
      - **4. 学术故事线（Storyline）亮点**
+
+5. **【场景 E：收到【恢复研讨】指令时（断点承接模板）】**：
+   - 当用户因刷新/断网或在云端/新会话中发送 \`【恢复研讨】\` 并附带断点信息时：
+     - 严禁要求用户重新走 Step 0 启动流程。
+     - 输出 \`### 🔄 【断点恢复与上下文对齐】\`：
+       - **文献锁定**：确认文献标题与研究主题。
+       - **轮次定位**：明确对齐至 \`Round X/4\`。
+       - **前序共识**：1~2 句话梳理已达成的核心共识。
+     - 紧接着输出 \`### 📌 【接续当前轮次深度推敲】\`，直接发起当前轮次的苏格拉底追问或对断点未决问题展开逻辑推敲。
+     - 文末标注：\`*(当前状态: Round X/4 断点接续推进中 | 若已通透请回复【进入下一轮】)*\`。
+
+6. **【场景 F：收到【开启精读】或破冰回答时（破冰转精读模板）】**：
+   - 自动继承破冰热身阶段已建立的文献认知（无需重新进行 Step 0 启动流程）。
+   - 第一句话输出 \`### 🚀 【热身完毕 · 破冰认知接入精读模式】\`，简要点评用户的破冰回答亮点或确认已建立的直觉物理图景。
+   - 随后直接输出 \`### 🎯 【Round 1/4: 科学矛盾、前沿缺口与假说】\`，展开第一轮的【客观证据锚定】、【💡 概念脚手架】与【苏格拉底 Why-Chains 追问】。
+   - 文末标注：\`*(当前状态: Round 1/4 轮内打磨中 | 若已通透请回复【进入下一轮】)*\`。
 `;
 
-// 应用状态
-let currentMode: 'rapid' | 'deep' = 'rapid';
+/** 本地会话持久化存储结构 */
+interface SavedSession {
+  chatHistory: Array<{ role: 'user' | 'assistant'; content: string; mode?: string }>;
+  uploadedPdfText: string;
+  uploadedPdfName: string;
+  uploadedPdfSectionSummary: string;
+  currentMode: 'warmup' | 'rapid' | 'deep';
+  timestamp: number;
+}
+
+const STORAGE_KEY_SESSION = 'ocean_coach_session_v1';
+
+// 应用状态 (默认开启引导式破冰热身模式)
+let currentMode: 'warmup' | 'rapid' | 'deep' = 'warmup';
 let apiKey = localStorage.getItem('gemini_api_key') || (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
 let chatHistory: Array<{ role: 'user' | 'assistant'; content: string; mode?: string }> = [];
 let uploadedPdfText = '';
@@ -288,8 +352,86 @@ let isGenerating = false;
 let scholarResults: ScholarPaper[] = [];
 let isSearchingScholar = false;
 
+/** 保存当前会话到 localStorage (自动存档) */
+function saveSessionState() {
+  try {
+    const sessionData: SavedSession = {
+      chatHistory,
+      uploadedPdfText,
+      uploadedPdfName,
+      uploadedPdfSectionSummary,
+      currentMode,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(sessionData));
+    updateSessionBadge(true);
+  } catch (e) {
+    console.warn('保存本地会话失败:', e);
+  }
+}
+
+/** 从 localStorage 读取恢复会话 (断点自动恢复) */
+function loadSessionState(): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_SESSION);
+    if (!raw) return false;
+    const data = JSON.parse(raw) as SavedSession;
+    if (data && Array.isArray(data.chatHistory) && data.chatHistory.length > 0) {
+      chatHistory = data.chatHistory;
+      uploadedPdfText = data.uploadedPdfText || '';
+      uploadedPdfName = data.uploadedPdfName || '';
+      uploadedPdfSectionSummary = data.uploadedPdfSectionSummary || '';
+      if (data.currentMode) currentMode = data.currentMode;
+      return true;
+    }
+  } catch (e) {
+    console.warn('恢复本地会话失败:', e);
+  }
+  return false;
+}
+
+/** 清理本地会话存储 */
+function clearSessionState() {
+  try {
+    localStorage.removeItem(STORAGE_KEY_SESSION);
+    updateSessionBadge(false);
+  } catch (e) {
+    console.warn('清空本地会话失败:', e);
+  }
+}
+
+/** 更新会话存档状态徽章 */
+function updateSessionBadge(isSaved: boolean) {
+  const badge = document.getElementById('session-save-badge');
+  if (!badge) return;
+  if (chatHistory.length === 0 && !uploadedPdfName) {
+    badge.style.display = 'none';
+    return;
+  }
+  badge.style.display = 'inline-flex';
+  if (isSaved) {
+    badge.className = 'session-status-badge';
+    badge.innerHTML = `<span>💾 会话已自动存档</span>`;
+  } else {
+    badge.className = 'session-status-badge saving';
+    badge.innerHTML = `<span>⏳ 正在同步缓存...</span>`;
+  }
+}
+
+/** 填入【恢复研讨】断点模板到输入框 */
+function fillRecoveryTemplate() {
+  const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
+  if (textarea) {
+    textarea.value = `【恢复研讨】\n1. 【文献标题】：${uploadedPdfName ? `《${uploadedPdfName}》` : '[请填写文献名称]'}\n2. 【中断前轮次】：Round 2/4\n3. 【已达成的核心共识】：[简要列出前序轮次已闭环的结论与关键机理]\n4. 【待继续探讨的议题/追问】：[简要列出中断前的遗留问题或您的回答]`;
+    textarea.focus();
+    textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showToast('🔄 已填入【恢复研讨】断点模板，填入断点信息发送后导师将无缝接续！');
+  }
+}
+
 /** 初始化应用骨架 (仅执行一次) */
 function initApp() {
+  const hasRestored = loadSessionState();
   const app = document.getElementById('app');
   if (!app) return;
 
@@ -380,6 +522,9 @@ function initApp() {
           <div class="panel-card">
             <h3>🧪 Benchmark 测试案例</h3>
             <div class="test-cases">
+              <button class="test-btn" id="load-test-0" style="background:#fefbf3; border-color:#d4a373; font-weight:500;">
+                ☕ Case 0: 破冰热身与关键图表提取
+              </button>
               <button class="test-btn" id="load-test-1">
                 📌 Case 1: DOC 空白与 Exact Quote 提取
               </button>
@@ -393,31 +538,45 @@ function initApp() {
         <!-- 聊天主区域 -->
         <main class="chat-area">
           <div class="chat-toolbar">
-            <span id="chat-status-text">
-              💡 当前模式：<strong id="current-mode-label">${
-                currentMode === 'rapid'
-                  ? '【泛读模式】10维全景初审与硬数据核查 (T=0.0)'
-                  : '【精读模式】锁定致命漏洞与苏格拉底考问 (T=0.3)'
-              }</strong>
-            </span>
-            <button class="toolbar-btn" id="clear-chat-btn">🗑️ 清空对话</button>
+            <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap;">
+              <span id="chat-status-text">
+                💡 当前模式：<strong id="current-mode-label">${
+                  currentMode === 'warmup'
+                    ? '【破冰热身模式】认知快照与关键图表 (T=0.4)'
+                    : currentMode === 'rapid'
+                    ? '【泛读模式】10维初审与数据核查 (T=0.0)'
+                    : '【精读模式】4轮苏格拉底递进研讨 (T=0.3)'
+                }</strong>
+              </span>
+              <span class="session-status-badge" id="session-save-badge" style="display:none;" title="网络微断或页面刷新后将自动无缝恢复会话">💾 会话已自动存档</span>
+            </div>
+            <div class="toolbar-actions">
+              <button class="toolbar-btn" id="recover-quick-btn" title="填入断点恢复卡片，快速承接中断研讨">🔄 恢复研讨</button>
+              <button class="toolbar-btn" id="clear-chat-btn">🗑️ 清空对话</button>
+            </div>
           </div>
 
           <div class="chat-messages" id="chat-messages">
             <div class="welcome-box" id="welcome-box">
               <h2>静寂・严谨・学术文献库直连</h2>
-              <p>可通过左侧搜索框直连文献库调取论文，或上传 PDF/粘贴片段开展 10 维 Peer Review。</p>
+              <p>可通过左侧搜索框直连文献库调取论文，或上传 PDF/粘贴片段开展 10 维 Peer Review 与引导式研讨。</p>
               <div class="quick-tips">
-                <span>💡 提示：按 <strong>Ctrl + Enter</strong> 或 <strong>Cmd + Enter</strong> 可快捷发送。</span>
+                <span>💡 提示：按 <strong>Ctrl + Enter</strong> 或 <strong>Cmd + Enter</strong> 可快捷发送。会话全程本地自动存档，刷新不丢失。</span>
               </div>
             </div>
           </div>
 
           <div class="input-container">
-            <textarea id="user-input" placeholder="粘贴论文片段、提出答辩反思，或上传 PDF 后直接点击发送 (Ctrl+Enter 发送)..."></textarea>
+            <textarea id="user-input" placeholder="粘贴论文片段、输入研讨反思，或上传 PDF 后点击发送 (Ctrl+Enter 发送)..."></textarea>
             <div class="input-actions">
               <span class="mode-indicator" id="mode-indicator">
-                当前策略: ${currentMode === 'rapid' ? 'GREEDY (T=0.0)' : 'SOCRATIC MENTOR (T=0.3)'}
+                当前策略: ${
+                  currentMode === 'warmup'
+                    ? 'GUIDED SCAFFOLDING (T=0.4)'
+                    : currentMode === 'rapid'
+                    ? 'GREEDY SAMPLING (T=0.0)'
+                    : 'SOCRATIC MENTOR (T=0.3)'
+                }
               </span>
               <div style="display:flex; gap:0.5rem; align-items:center;">
                 <button id="recall-last-btn" class="toolbar-btn" style="padding:0.35rem 0.65rem; font-size:0.78rem;" title="将上一条发送的内容载入输入框">✏️ 载入上条输入</button>
@@ -433,10 +592,21 @@ function initApp() {
   bindAllEvents();
   updatePdfUI();
   updateModeUI();
+  if (chatHistory.length > 0) {
+    updateChatUI();
+  }
+  if (hasRestored) {
+    showToast('🔄 已自动恢复上次研讨会话与文献数据！');
+  }
 }
 
 /** 事件绑定 */
 function bindAllEvents() {
+  // 恢复研讨快捷按钮 (Toolbar)
+  document.getElementById('recover-quick-btn')?.addEventListener('click', () => {
+    fillRecoveryTemplate();
+  });
+
   // API Key 保存
   document.getElementById('save-key-btn')?.addEventListener('click', () => {
     const input = document.getElementById('api-key-input') as HTMLInputElement;
@@ -498,11 +668,12 @@ function bindAllEvents() {
   // 模式切换卡片
   document.querySelectorAll('.mode-card').forEach((card) => {
     card.addEventListener('click', () => {
-      const mode = card.getAttribute('data-mode') as 'rapid' | 'deep';
+      const mode = card.getAttribute('data-mode') as 'warmup' | 'rapid' | 'deep';
       if (mode && mode !== currentMode) {
         currentMode = mode;
         updateModeUI();
         onModeChanged(mode);
+        saveSessionState();
       }
     });
   });
@@ -540,6 +711,17 @@ function bindAllEvents() {
   }
 
   // Benchmark 测试用例
+  document.getElementById('load-test-0')?.addEventListener('click', () => {
+    currentMode = 'warmup';
+    updateModeUI();
+    onModeChanged('warmup');
+    const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.value = `【破冰热身请求】请对以下文献生成 3 项关键快照卡片（核心科学矛盾 + 关键图表指引 + 3个阶梯思考题）：\nTitle: Rapid Accumulation of Refractory Dissolved Organic Carbon in Global Deep Ocean\nAbstract [Page 1]: "The refractory dissolved organic carbon (RDOC) reservoir in the global ocean represents a major carbon sink. Here we report rapid RDOC accumulation rates across the North Pacific deep ocean."\nFigure 1 [Page 3]: "Spatial distribution of sampling stations and vertical DOC profiles across the subarctic North Pacific."\nFigure 3 [Page 5]: "HTCO-measured DOC concentrations vs. water mass age (radiocarbon 14C), showing unexpected positive accumulation in deep layers."`;
+      textarea.focus();
+    }
+  });
+
   document.getElementById('load-test-1')?.addEventListener('click', () => {
     currentMode = 'rapid';
     updateModeUI();
@@ -555,7 +737,7 @@ function bindAllEvents() {
     updateModeUI();
     const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
     if (textarea) {
-      textarea.value = `【精读研讨初始化】\n1. 【目标文献】：Microbial Carbon Pump Driven Refractory DOC Production Rates in Marine Ecosystems\n2. 【我的研究背景与课题方向】：关注大洋碳循环与微型生物碳泵(MCP)机理，当前拟探讨难降解DOC产率\n3. 【我已有的实验/数据认知】：实验室具备HTCO与氨基酸手性测定手段`;
+      textarea.value = `【精读研讨初始化】\n1. 【目标文献】：Microbial Carbon Pump Driven Refractory DOC Production Rates in Marine Ecosystems\n2. 【研究背景与课题方向】：关注大洋碳循环与微型生物碳泵(MCP)机理，当前拟探讨难降解DOC产率\n3. 【已有实验/数据认知】：实验室具备HTCO与氨基酸手性测定手段`;
       textarea.focus();
     }
   });
@@ -588,12 +770,14 @@ function bindAllEvents() {
     showToast('ℹ️ 暂无历史发送记录。');
   });
 
-  // 清空对话
+  // 清空对话与会话缓存
   document.getElementById('clear-chat-btn')?.addEventListener('click', () => {
     if (chatHistory.length === 0) return;
-    if (confirm('确定要清空当前对话记录吗？')) {
+    if (confirm('确定要清空当前对话记录与本地缓存吗？')) {
       chatHistory = [];
+      clearSessionState();
       updateChatUI();
+      showToast('🗑️ 已清空对话记录与本地存档。');
     }
   });
 }
@@ -612,28 +796,62 @@ function updateModeUI() {
   const modeLabel = document.getElementById('current-mode-label');
   if (modeLabel) {
     modeLabel.textContent =
-      currentMode === 'rapid'
-        ? '【泛读模式】10维全景初审与硬数据核查 (T=0.0)'
-        : '【精读模式】启发式导师与 4 轮苏格拉底研讨 (T=0.3)';
+      currentMode === 'warmup'
+        ? '【破冰热身模式】认知快照与关键图表 (T=0.4)'
+        : currentMode === 'rapid'
+        ? '【泛读模式】10维初审与数据核查 (T=0.0)'
+        : '【精读模式】4轮苏格拉底递进研讨 (T=0.3)';
   }
 
   const modeIndicator = document.getElementById('mode-indicator');
   if (modeIndicator) {
     modeIndicator.textContent = `当前策略: ${
-      currentMode === 'rapid' ? 'GREEDY (T=0.0)' : 'SOCRATIC MENTOR (T=0.3)'
+      currentMode === 'warmup'
+        ? 'GUIDED SCAFFOLDING (T=0.4)'
+        : currentMode === 'rapid'
+        ? 'GREEDY SAMPLING (T=0.0)'
+        : 'SOCRATIC MENTOR (T=0.3)'
     } ${uploadedPdfName ? `| 📄 已载入: ${uploadedPdfName} (${uploadedPdfText.length.toLocaleString()}字)` : ''}`;
   }
 }
 
 /** 研读模式切换后的逻辑与互动引导 */
-function onModeChanged(newMode: 'rapid' | 'deep') {
-  if (newMode === 'deep') {
+function onModeChanged(newMode: 'warmup' | 'rapid' | 'deep') {
+  if (newMode === 'warmup') {
+    const lastMsg = chatHistory[chatHistory.length - 1];
+    if (!lastMsg || !lastMsg.content.includes('【破冰热身模式】')) {
+      const noticeContent = `### ☕ 【破冰热身模式】
+
+已激活 **【破冰热身模式】**。系统将输出 3 项文献关键快照：
+
+1. 🎴 **核心科学矛盾**
+2. 🎴 **关键图表证据指引**
+3. 🎴 **3 个阶梯思考题**
+
+<div class="mode-switch-card">
+  <div class="mode-switch-header">🚀 破冰提炼与精读流转</div>
+  <div class="mode-switch-desc">${uploadedPdfName ? `针对已载入文献《${uploadedPdfName}》，` : ''}生成快照卡片或进入精读模式：</div>
+  <div class="quick-action-chips">
+    <button class="chip-btn" id="chip-gen-warmup" style="background:#fefbf3; border-color:#d4a373; color:#9c6644; font-weight:600;">☕ 【生成破冰快照】</button>
+    <button class="chip-btn" id="chip-warmup-answer">📝 填入思考题回答模板</button>
+    <button class="chip-btn" id="chip-start-deep" style="background:#e8f4ff; border-color:var(--accent-indigo); font-weight:600;">🚀 【开启精读】 (进入研讨)</button>
+  </div>
+</div>`;
+
+      chatHistory.push({
+        role: 'assistant',
+        content: noticeContent,
+        mode: 'warmup',
+      });
+      updateChatUI();
+    }
+  } else if (newMode === 'deep') {
     // 检查最后一条消息是否包含精读引导，避免重复推送
     const lastMsg = chatHistory[chatHistory.length - 1];
-    if (!lastMsg || !lastMsg.content.includes('【精读模式已激活')) {
-      const noticeContent = `### 🎓 【精读模式已激活 · 学术导师苏格拉底研讨】
+    if (!lastMsg || !lastMsg.content.includes('【精读模式】')) {
+      const noticeContent = `### 🎓 【精读模式】4轮苏格拉底递进研讨
 
-已成功切换至 **【精读模式】**。在此模式下，系统将化身为**海洋科学与生物地球化学领域资深学术导师与同行评审专家**，通过【苏格拉底式追问】、【费曼研讨法】与【深度推敲闭环】，引导您批判性地拆解文献机理、实验设计与叙事策略。
+已激活 **【精读模式】**。围绕科学假说、实验质控、反常推论与叙事写作开展 4 轮深度推敲。
 
 ---
 
@@ -641,21 +859,22 @@ function onModeChanged(newMode: 'rapid' | 'deep') {
 
 1. **【目标文献全文/核心段落/图表】（必填）**：上传 PDF 或粘贴文献核心内容。
 2. **【文献类型判定】（必选）**：A. 实证观测/实验；B. 理论模型/数值模拟；C. 综述与前沿观点。
-3. **【我的研究背景与关注方向】（可选）**：关注的化学组分/介质/海区尺度/机理猜想；若无请填“探索中”。
-4. **【我已有的实验/数据认知】（可选）**：已有测试手段、反常数据、预实验现象。
+3. **【研究背景与关注方向】（可选）**：关注的化学组分/介质/海区尺度/机理猜想；若无填“探索中”。
+4. **【已有实验/数据认知】（可选）**：已有测试手段、反常数据、预实验现象。
 
 <div class="mode-switch-card">
-  <div class="mode-switch-header">🚀 4 轮状态推进研讨通道与指令硬锁</div>
-  <div class="mode-switch-desc">${uploadedPdfName ? `针对已载入文献《${uploadedPdfName}》，` : ''}包含【进入下一轮】解锁、卡壳【给个提示】与【概念求助】：</div>
+  <div class="mode-switch-header">🚀 4 轮研讨通道与状态指令</div>
+  <div class="mode-switch-desc">${uploadedPdfName ? `针对已载入文献《${uploadedPdfName}》，` : ''}支持轮次推进、线索提示、概念解析与断点恢复：</div>
   <div class="quick-action-chips">
     <button class="chip-btn" id="chip-init-info">📝 填入 Step 0 启动引导模板</button>
-    <button class="chip-btn" id="chip-next-round" style="background:#e8f4ff; border-color:var(--accent-indigo); font-weight:600;">🔓 【进入下一轮】 (解锁轮次硬锁)</button>
+    <button class="chip-btn" id="chip-recover-session" style="background:#fef2f2; border-color:#ef4444; color:#b91c1c; font-weight:600;">🔄 【恢复研讨】 (断点快速承接)</button>
+    <button class="chip-btn" id="chip-next-round" style="background:#e8f4ff; border-color:var(--accent-indigo); font-weight:600;">🔓 【进入下一轮】 (解锁轮次)</button>
     <button class="chip-btn" id="chip-give-tip" style="background:#f0fdf4; border-color:#16a34a; color:#15803d;">🧩 【给个提示】</button>
     <button class="chip-btn" id="chip-concept-help" style="background:#fff8e6; border-color:#d97706; color:#b45309;">💡 【概念求助：XXX】</button>
-    <button class="chip-btn" id="chip-finish-review" style="background:#fcf4ff; border-color:#9333ea; color:#7e22ce;">🏁 【完成研讨】 (生成文献卡片)</button>
-    <button class="chip-btn" id="chip-round-1">1️⃣ Round 1: 科学矛盾、缺口与假说</button>
-    <button class="chip-btn" id="chip-round-2">2️⃣ Round 2: 质控、机制推导与叙事</button>
-    <button class="chip-btn" id="chip-round-3">3️⃣ Round 3: 假想敌与局限突破</button>
+    <button class="chip-btn" id="chip-finish-review" style="background:#fcf4ff; border-color:#9333ea; color:#7e22ce;">🏁 【完成研讨】 (生成文献笔记)</button>
+    <button class="chip-btn" id="chip-round-1">1️⃣ Round 1: 科学矛盾与驱动假说</button>
+    <button class="chip-btn" id="chip-round-2">2️⃣ Round 2: 实验质控与图表叙事</button>
+    <button class="chip-btn" id="chip-round-3">3️⃣ Round 3: 审稿视角与局限突破</button>
     <button class="chip-btn" id="chip-round-4">4️⃣ Round 4: 叙事升华与综合写作</button>
   </div>
 </div>`;
@@ -672,15 +891,52 @@ function onModeChanged(newMode: 'rapid' | 'deep') {
   }
 }
 
-/** 绑定精读互动快捷按钮事件 */
+/** 绑定精读与破冰互动快捷按钮事件 */
 function bindChipEvents() {
+  // 破冰热身快捷按钮
+  document.querySelectorAll('#chip-gen-warmup').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      handleSendWithCustomContent(
+        uploadedPdfName
+          ? `请对已上传文献《${uploadedPdfName}》生成【模式 0：破冰热身快照】（核心科学矛盾 + 关键图表指引 + 3个阶梯思考题）。`
+          : `请对当前文献生成【模式 0：破冰热身快照】（核心科学矛盾 + 关键图表指引 + 3个阶梯思考题）。`
+      );
+    });
+  });
+
+  document.querySelectorAll('#chip-warmup-answer').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.value = `【思考题回答】\n1. 【Q1 基础观察】：[对现象/图1趋势的理解]\n2. 【Q2 方法连接】：[关键实验手段与质控]\n3. 【Q3 机制延伸】：[潜在干扰或替代机理]\n\n回答完毕，请点评并【开启精读】进入 Round 1/4！`;
+        textarea.focus();
+        showToast('已填入回答模板，简要填写后发送即可进入精读！');
+      }
+    });
+  });
+
+  document.querySelectorAll('#chip-start-deep').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      currentMode = 'deep';
+      updateModeUI();
+      handleSendWithCustomContent('【开启精读】');
+    });
+  });
+
+  // 快捷恢复研讨 (断点承接)
+  document.querySelectorAll('#chip-recover-session').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      fillRecoveryTemplate();
+    });
+  });
+
   document.querySelectorAll('#chip-init-info').forEach((btn) => {
     btn.addEventListener('click', () => {
       const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
       if (textarea) {
         textarea.value = uploadedPdfName
-          ? `【精读研讨 Step 0 启动】\n1. 【目标文献全文/核心段落/图表】：已载入《${uploadedPdfName}》\n2. 【文献类型判定】：A. 实证观测/实验\n3. 【我的研究背景与关注方向】：[关注的化学组分/介质/海区尺度/机理猜想，若无填“探索中”]\n4. 【我已有的实验/数据认知】：[已有测试手段、反常数据、预实验现象]`
-          : `【精读研讨 Step 0 启动】\n1. 【目标文献全文/核心段落/图表】：[请在此贴入文献内容/标题]\n2. 【文献类型判定】：A. 实证观测/实验\n3. 【我的研究背景与关注方向】：[关注的化学组分/介质/海区尺度/机理猜想，若无填“探索中”]\n4. 【我已有的实验/数据认知】：[已有测试手段、反常数据、预实验现象]`;
+          ? `【精读研讨 Step 0 启动】\n1. 【目标文献全文/核心段落/图表】：已载入《${uploadedPdfName}》\n2. 【文献类型判定】：A. 实证观测/实验\n3. 【研究背景与关注方向】：[关注的化学组分/介质/海区尺度/机理猜想，若无填“探索中”]\n4. 【已有实验/数据认知】：[已有测试手段、反常数据、预实验现象]`
+          : `【精读研讨 Step 0 启动】\n1. 【目标文献全文/核心段落/图表】：[请在此贴入文献内容/标题]\n2. 【文献类型判定】：A. 实证观测/实验\n3. 【研究背景与关注方向】：[关注的化学组分/介质/海区尺度/机理猜想，若无填“探索中”]\n4. 【已有实验/数据认知】：[已有测试手段、反常数据、预实验现象]`;
         textarea.focus();
         showToast('已填入 Step 0 启动引导模板，补充信息后点击发送即可启动！');
       }
@@ -713,10 +969,10 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
       if (textarea) {
-        textarea.value = '【概念求助：请在此输入您困惑的专业术语/公式/生化机制】';
+        textarea.value = '【概念求助：请在此输入困惑的专业术语/公式/机制】';
         textarea.focus();
         textarea.setSelectionRange(6, textarea.value.length - 1);
-        showToast('💡 请替换具体术语后发送，导师将用物理图景与大白话深度解惑！');
+        showToast('💡 请替换具体术语后发送，将以物理图像深度解惑！');
       }
     });
   });
@@ -725,8 +981,8 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       handleSendWithCustomContent(
         uploadedPdfName
-          ? `【Round 1/4: 科学矛盾、前沿缺口与假说】：针对文献《${uploadedPdfName}》，请提炼拟解决的核心矛盾（Gap）、理论依据（英文 Exact Quote）及驱动假说，并提出 2 个尖锐的苏格拉底追问！`
-          : `【Round 1/4: 科学矛盾、前沿缺口与假说】：请提炼拟解决的核心矛盾（Gap）、理论依据（英文 Exact Quote）及驱动假说，并提出 2 个尖锐的苏格拉底追问！`
+          ? `【Round 1/4: 科学矛盾、前沿缺口与假说】：针对文献《${uploadedPdfName}》，请提炼拟解决的核心矛盾（Gap）、理论依据（英文 Exact Quote）及驱动假说，并提出启发追问。`
+          : `【Round 1/4: 科学矛盾、前沿缺口与假说】：请提炼拟解决的核心矛盾（Gap）、理论依据（英文 Exact Quote）及驱动假说，并提出启发追问。`
       );
     });
   });
@@ -735,8 +991,8 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       handleSendWithCustomContent(
         uploadedPdfName
-          ? `【Round 2/4: 实验质控、机制推导与叙事链条】：针对文献《${uploadedPdfName}》，请用 1 句话逻辑衔接，提炼采样/观测尺度、质控（空白/检出限/标样）、对照组与 Figure 叙事链条并追问排他性机制！`
-          : `【Round 2/4: 实验质控、机制推导与叙事链条】：请用 1 句话逻辑衔接，提炼采样/观测尺度、质控（空白/检出限/标样）、对照组与 Figure 叙事链条并追问排他性机制！`
+          ? `【Round 2/4: 实验质控、机制推导与叙事链条】：针对文献《${uploadedPdfName}》，请用 1 句话逻辑衔接，提炼采样/观测尺度、质控（空白/检出限/标样）、对照组与图表叙事链条并追问排他性机制。`
+          : `【Round 2/4: 实验质控、机制推导与叙事链条】：请用 1 句话逻辑衔接，提炼采样/观测尺度、质控（空白/检出限/标样）、对照组与图表叙事链条并追问排他性机制。`
       );
     });
   });
@@ -745,8 +1001,8 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       handleSendWithCustomContent(
         uploadedPdfName
-          ? `【Round 3/4: 假想敌审视与局限突破】：针对文献《${uploadedPdfName}》，请承接数据链条，列出 Discussion/Limitation 薄弱点与防弹修辞，并扮演刁钻审稿人进行交锋！`
-          : `【Round 3/4: 假想敌审视与局限突破】：请承接数据链条，列出 Discussion/Limitation 薄弱点与防弹修辞，并扮演刁钻审稿人进行交锋！`
+          ? `【Round 3/4: 假想敌审视与局限突破】：针对文献《${uploadedPdfName}》，请承接数据链条，列出 Discussion/Limitation 薄弱点与防弹修辞，并从严苛同行评审视角进行交锋。`
+          : `【Round 3/4: 假想敌审视与局限突破】：请承接数据链条，列出 Discussion/Limitation 薄弱点与防弹修辞，并从严苛同行评审视角进行交锋。`
       );
     });
   });
@@ -755,8 +1011,8 @@ function bindChipEvents() {
     btn.addEventListener('click', () => {
       handleSendWithCustomContent(
         uploadedPdfName
-          ? `【Round 4/4: 学术叙事升华与综合写作】：针对文献《${uploadedPdfName}》，请将机理与局限升华至学术大脉络，解构全球学术大对话，并引导我完成 150 字 Synthesis 段落！`
-          : `【Round 4/4: 学术叙事升华与综合写作】：请将机理与局限升华至学术大脉络，解构全球学术大对话，并引导我完成 150 字 Synthesis 段落！`
+          ? `【Round 4/4: 学术叙事升华与综合写作】：针对文献《${uploadedPdfName}》，请将机理与局限升华至学术大脉络，解构全球学术大对话，并引导完成 150 字 Synthesis 综合段落。`
+          : `【Round 4/4: 学术叙事升华与综合写作】：请将机理与局限升华至学术大脉络，解构全球学术大对话，并引导完成 150 字 Synthesis 综合段落。`
       );
     });
   });
@@ -773,7 +1029,9 @@ async function handleSendWithCustomContent(customPrompt: string) {
 
 /** 根据当前模式与用户输入动态获取加载占位提示 */
 function getLoadingPlaceholderText(userPrompt?: string): string {
-  if (currentMode === 'deep') {
+  if (currentMode === 'warmup') {
+    return '☕ 正在提取 30 秒认知快照（核心矛盾 + 关键图表 + 破冰思考题）... ⏳';
+  } else if (currentMode === 'deep') {
     if (userPrompt && (userPrompt.includes('考问') || userPrompt.includes('挑战') || userPrompt.includes('答辩'))) {
       return '🛡️ 正在梳理论文致命漏洞与构思苏格拉底考问... ⏳';
     }
@@ -791,6 +1049,9 @@ function getLoadingPlaceholderText(userPrompt?: string): string {
 
 /** 根据当前模式获取发送按钮加载文字 */
 function getLoadingBtnText(): string {
+  if (currentMode === 'warmup') {
+    return '正在破冰热身中 ⏳';
+  }
   if (currentMode === 'deep') {
     return '正在精读思考中 ⏳';
   }
@@ -818,6 +1079,7 @@ function updatePdfUI() {
       uploadedPdfSectionSummary = '';
       updatePdfUI();
       updateModeUI();
+      saveSessionState();
       showToast('已移除上传的 PDF 文献。');
     });
   } else {
@@ -885,10 +1147,11 @@ function updateChatUI() {
         <h2>静寂・严谨・学术文献库直连</h2>
         <p>可通过左侧搜索框直连文献库调取论文，或上传 PDF/粘贴片段开展 10 维 Peer Review。</p>
         <div class="quick-tips">
-          <span>💡 提示：按 <strong>Ctrl + Enter</strong> 或 <strong>Cmd + Enter</strong> 可快捷发送。</span>
+          <span>💡 提示：按 <strong>Ctrl + Enter</strong> 或 <strong>Cmd + Enter</strong> 可快捷发送。会话全程本地自动存档，刷新不丢失。</span>
         </div>
       </div>
     `;
+    updateSessionBadge(false);
     return;
   }
 
@@ -969,6 +1232,7 @@ function updateChatUI() {
 
   bindChipEvents();
   scrollToBottom();
+  saveSessionState();
 }
 
 /** 增量更新最后一条 Assistant 消息 (用于流式渲染) */
@@ -1060,6 +1324,7 @@ async function handlePdfFile(file: File) {
     uploadedPdfName = file.name;
     uploadedPdfSectionSummary = detectedSections.slice(0, 6).join(' / ') || '全文结构已解析';
     updatePdfUI();
+    saveSessionState();
 
     const textarea = document.getElementById('user-input') as HTMLTextAreaElement;
     if (textarea && !textarea.value) {
@@ -1067,7 +1332,7 @@ async function handlePdfFile(file: File) {
         currentMode === 'rapid' ? '泛读模式：10维全景初审与硬数据核查' : '精读模式：锁定致命漏洞与苏格拉底考问'
       }】。`;
     }
-    showToast(`✅ 成功解析《${file.name}》，共 ${pdf.numPages} 页，已建立全篇章节索引！`);
+    showToast(`✅ 成功解析《${file.name}》，共 ${pdf.numPages} 页，已建立全篇章节索引并自动存档！`);
   } catch (err) {
     console.error('PDF 解析出错:', err);
     if (container) {
@@ -1131,9 +1396,13 @@ async function handleSend() {
   let content = textarea.value.trim();
 
   if (!content && uploadedPdfText) {
-    content = `请对已上传文献《${uploadedPdfName}》执行【${
-      currentMode === 'rapid' ? '泛读模式：10维全景初审与硬数据核查' : '精读模式：锁定致命漏洞与苏格拉底考问'
-    }】。`;
+    if (currentMode === 'warmup') {
+      content = `请对已上传文献《${uploadedPdfName}》执行【模式 0：破冰热身快照】（核心科学矛盾 + 关键图表指引 + 3个阶梯思考题）。`;
+    } else if (currentMode === 'rapid') {
+      content = `请对已上传文献《${uploadedPdfName}》执行【泛读模式：10维初审与数据核查】。`;
+    } else {
+      content = `请对已上传文献《${uploadedPdfName}》执行【精读模式：4轮苏格拉底递进研讨】。`;
+    }
   }
   if (!content) return;
 
@@ -1154,8 +1423,27 @@ async function handleSend() {
   }
 
   // 构建用户消息与对话历史
-  const modeLabel = currentMode === 'rapid' ? '【泛读模式：10维全景初审与硬数据核查】' : '【精读模式：锁定致命漏洞与苏格拉底考问】';
-  const userMessageText = `【当前执行模式】：${modeLabel}\n【用户需求与论文研读指令】：\n${content}`;
+  let modeLabel = '【破冰热身模式：认知快照与关键图表】';
+  if (currentMode === 'rapid') modeLabel = '【泛读模式：10维初审与数据核查】';
+  if (currentMode === 'deep') modeLabel = '【精读模式：4轮苏格拉底递进研讨】';
+  
+  let userMessageText = `【当前执行模式】：${modeLabel}\n【用户需求与论文研读指令】：\n${content}`;
+  
+  // 精读模式运行时负向硬锁与放行网关注入
+  if (currentMode === 'deep') {
+    const isAdvancingRound = /(【进入下一轮】|【进入\s*Round\s*[1-4]】)/i.test(content);
+    if (isAdvancingRound) {
+      userMessageText += `\n\n[System Guardrail: 收到通行令【进入下一轮】，允许解除状态锁并推进至下一轮。请输出下一轮的【逻辑衔接】与【客观证据锚定】。]`;
+    } else if (content.includes('【概念求助')) {
+      userMessageText += `\n\n[System Guardrail: 收到概念求助，请暂停当前追问，仅输出【概念深度破译与物理图景】，并在文末标注 [STATE_LOCK_ACTIVE] 保持当前轮次。]`;
+    } else if (content.includes('【恢复研讨') || content.includes('【恢复研讨】')) {
+      userMessageText += `\n\n[System Guardrail: 收到断点恢复请求，请输出【断点恢复与上下文对齐】并接续当前断点轮次，文末标注 [STATE_LOCK_ACTIVE]。]`;
+    } else if (content.includes('【完成研讨') || content.includes('【完成研讨】')) {
+      userMessageText += `\n\n[System Guardrail: 收到完成研讨指令，请生成完整的结构化文献笔记卡片。]`;
+    } else {
+      userMessageText += `\n\n[System Guardrail 负向硬锁生效中: 用户未输入【进入下一轮】。严禁在单次回复中同时输出下一轮的【客观证据锚定】或追问！必须先输出【逻辑红笔点评】，再输出当前轮次的【追击短问】，文末必须强制标注 *(当前状态: Round X/4 轮内研讨打磨中 🔒 [STATE_LOCK_ACTIVE] | 必须显式输入【进入下一轮】方可解锁新轮次)*。]`;
+    }
+  }
 
   chatHistory.push({ role: 'user', content, mode: currentMode });
   chatHistory.push({ role: 'assistant', content: '' });
@@ -1293,8 +1581,64 @@ async function handleSend() {
   }
 }
 
-/** 模拟响应（无 API Key 时的备用体验，完全对齐 10 维学术矩阵规范） */
-function simulateAgentResponse(_input: string, mode: 'rapid' | 'deep'): string {
+/** 模拟响应（无 API Key 时的备用体验，完全对齐 10 维学术矩阵与破冰规范） */
+function simulateAgentResponse(_input: string, mode: 'warmup' | 'rapid' | 'deep'): string {
+  if (mode === 'warmup') {
+    return `### ☕ 【破冰热身 · 认知快照】
+
+针对文献《${uploadedPdfName || 'Rapid Accumulation of Refractory DOC in Global Deep Ocean'}》，已提取 3 项文献关键快照：
+
+---
+
+#### 🎴 卡片 1：核心科学矛盾
+- **核心矛盾**：深海难降解溶解有机碳（RDOC）到底是一成不变的保守背景池，还是受深海微生物碳泵驱动以高周转速率持续次生合成与积累的活性碳库？
+- **前沿意义与反常现象**：按经典 Hansell 碳库理论，深海 DOC 是高度均一保守的背景值（~40 μmol/L）；但本文在北太平洋深层水测得 $54 \\pm 2\\ \\mu\\text{mol/L}$ 的异常高值，若属实将重塑全球深海碳汇模型。
+- **原文锚定**：\`[Abstract / Page 1]\` \`[Exact Quote: "The refractory dissolved organic carbon (RDOC) reservoir in the global ocean represents a major carbon sink. Here we report rapid RDOC accumulation rates across the North Pacific deep ocean."]\`
+
+---
+
+#### 🎴 卡片 2：关键图表指引
+- **必看图 1 (现象与背景锚定 · Figure 1/Table 2)**：
+  - **核心指标**：北太平洋 15 个站位从表层至 4000m 底层的 DOC 垂直剖面与均值。
+  - **关键证据**：深层水 DOC 平均浓度达 $54 \\pm 2\\ \\mu\\text{mol/L}$，显著高于全球大洋深层基线。
+- **必看图 2 (核心机制与证据链 · Figure 3)**：
+  - **核心对比**：DOC 浓度与深层水团碳-14 年龄（$^{14}\\text{C}$ Age）的回归关系。
+  - **支撑结论**：水团随年代老化伴随 DOC 浓度上升，作者据此推论深海存在活跃的次生有机碳积累。
+
+---
+
+#### 🎴 卡片 3：3 个阶梯思考题
+1. **Q1 基础观察题**：深海处于低温高压寡营养环境，为何作者实测有机碳浓度较全球公认深海背景高出近 30%？
+2. **Q2 方法连接题**：作者在样品采集时使用聚乙烯（PE）塑料瓶冷冻保存，且空白仅用 Milli-Q 冲洗。从痕量化学分析角度，是否存在器皿溶出假象的可能？
+3. **Q3 机制延伸题**：若深海具备如此快速的 RDOC 合成速率，为何大洋深海碳库储量在长时间尺度上保持相对稳态？
+
+---
+
+> **☕ 研讨衔接**：*可直接在下方输入您的回答，或点击下方 **【开启精读】** 进入 4 轮苏格拉底深度研讨。*`;
+  }
+
+  if (_input.includes('开启精读') || _input.includes('【开启精读】')) {
+    return `### 🚀 【破冰认知接入精读模式】
+已建立对文献核心矛盾（深海 RDOC 异常高值 vs 传统背景理论）与关键图表的物理图像，正式切入 **4 轮苏格拉底递进研讨**：
+
+---
+
+### 🎯 【Round 1/4: 科学矛盾、前沿缺口与假说 (立论格局)】
+
+#### 📌 提炼文献核心客观事实与证据锚定
+1. **科学矛盾 (Core Gap)**：\`[Abstract / Page 1]\` \`[Exact Quote: "The refractory dissolved organic carbon (RDOC) reservoir in the global ocean represents a major carbon sink. Here we report rapid RDOC accumulation rates..."]\` —— 论文试图颠覆“深海 DOC 是惰性不可变死库”的传统假定。
+2. **理论基石对比**：\`[Introduction / Page 2]\` \`[Exact Quote: "Building upon the oceanic carbon reservoir baseline by Hansell et al. (2012)..."]\` —— 作者试图证明微型生物碳泵 (MCP) 在深海暗水层依然具备活跃的次生转化能力。
+
+#### 💡 核心概念脚手架
+- **RDOC (惰性溶解有机碳)**：海洋中无法被微生物在几百年内轻易分解的有机碳分子池，是大洋最大的活性有机碳库。
+
+#### 🛡️ 苏格拉底立论追问 (Socratic Why-Chains)
+1. **动机溯源 (Motivation Why)**：为什么作者认为北太平洋深层水是检验 RDOC 积累的理想突破口？
+2. **第一性原理与机制阐述 (First Principle)**：请阐述作者提出的机制假设：深海微生物通过何种生化反应途径将不稳定碳源转化为长期稳定的难降解有机碳？
+
+*(当前状态: Round 1/4 轮内研讨打磨中 🔒 [STATE_LOCK_ACTIVE] | 必须显式输入【进入下一轮】方可解锁新轮次)*`;
+  }
+
   if (mode === 'rapid') {
     return `### 🔍 <Self-Verification Log>
 - [✓] **Full-Text In-Context Grounding**: Verified across Abstract, Methods (Section 2.2), Results (Section 3.1), and Discussion (Section 4.1). Zero external hallucinations added.
@@ -1340,11 +1684,25 @@ function simulateAgentResponse(_input: string, mode: 'rapid' | 'deep'): string {
 - **审稿人初审决议**：**Major Revision (大修)**
 - **Top 2 核心硬伤警示**：
   1. **样品瓶溶出污染假象 (Artifact of PE Leaching)**：使用 PE 塑料瓶冷冻保存低浓度深海 DOC 样品，测得的 54 μmol/L 异常高值极可能是瓶壁塑料溶出假象，而非真实的海洋学信号。
-  2. **QA/QC 链条断裂**：缺少每批次 Milli-Q 空白绝对值和 Hansell CRM 漂移校准曲线，数据测量信度存在系统性可疑。
-
-*(提示：当前为模拟/演示模式。在右上角输入有效 Gemini API Key 后，将由官方大模型对你上传的论文全文执行全篇深度解析与多轮交锋)*`;
+  2. **QA/QC 链条断裂**：缺少每批次 Milli-Q 空白绝对值和 Hansell CRM 漂移校准曲线，数据测量信度存在系统性可疑。`;
   } else {
-    return `### 🎓 【精读研讨 · 轮次一：文献树溯源与科学问题启发】
+    if (_input.includes('恢复研讨') || _input.includes('【恢复研讨】')) {
+      return `### 🔄 【断点恢复与上下文对齐】
+- **文献锁定**：${uploadedPdfName ? `《${uploadedPdfName}》` : '大洋难降解有机碳与微型生物碳泵机制文献'}
+- **对齐研讨轮次**：已精准定位至 **Round 2/4 (实验质控、机制推导与叙事链条)**
+- **前序已达成共识**：已确认文献拟解决的核心 Gap 为深海 RDOC 次生转化速率，前序对 MCP 假说的理论依据与 Hansell 碳库模型已达成共识。
+
+---
+
+### 📌 【接续当前轮次深度推敲】
+针对您在断点前关注的实验质控与分析方法学：
+1. **空白与溶出质疑**：作者在采样过程中使用了聚乙烯（PE）瓶保存超低浓度深海 DOC 样品，且未披露 Milli-Q 水空白的具体数值与标准差。从同行评审视角，这一方法学漏洞是否可能导致实测的 $54 \\pm 2\\ \\mu\\text{mol/L}$ 存在显著系统性假象？
+2. **排他性因果推导**：文章由单一近岸表层培养数据直接推演至大洋深层 MCP 固碳通量，其叙事链条是否排除了深层水团物理混合与保守扩散的贡献？
+
+*(当前状态: Round 2/4 轮内研讨打磨中 🔒 [STATE_LOCK_ACTIVE] | 必须显式输入【进入下一轮】方可解锁新轮次)*`;
+    }
+
+    return `### 🎓 【精读研讨 · 轮次一：科学矛盾、前沿缺口与假说 (Round 1/4)】
 
 #### 📌 提炼文献核心客观事实与证据锚定 (2~3 点)
 1. **研究假说**：\`[Section 1 / Page 2]\` \`[Exact Quote: "We hypothesize that the microbial carbon pump converts labile organic carbon into refractory DOC..."]\` —— 论文提出了基于微型生物碳泵 (MCP) 驱动难降解有机碳 (RDOC) 积累的核心假说。
@@ -1352,11 +1710,11 @@ function simulateAgentResponse(_input: string, mode: 'rapid' | 'deep'): string {
 
 ---
 
-#### 💡 苏格拉底式思辨追问 (费曼阐述考问)
+#### 💡 苏格拉底式思辨追问
 1. **科学问题**：本篇论文提出的核心假说，试图解决海洋生物地球化学中的哪一个未解问题？它与经典 Hansell 碳库理论的根本分歧在哪里？
 2. **文献溯源**：在您自己的课题方向中，有哪些经典文献是理解该机制必须精读的基础？如果您要将其假说应用到您的研究介质/海区中，面临的最大理论挑战是什么？
 
-*(提示：您可以在下方回复您的回答，开启逻辑红笔审视；或点击 4 轮研讨 Chip 切换后续维度)*`;
+*(当前状态: Round 1/4 轮内研讨打磨中 🔒 [STATE_LOCK_ACTIVE] | 必须显式输入【进入下一轮】方可解锁新轮次)*`;
   }
 }
 
