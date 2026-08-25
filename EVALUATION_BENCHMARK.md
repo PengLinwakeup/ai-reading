@@ -34,3 +34,22 @@
    - 针对近岸表层与全球深层外推逻辑鸿沟，必须准确对齐引用 `[Section 2.3]` 原句 `[Exact Quote: "Single-station incubation experiments were conducted using surface seawater (0-5m) from a coastal bay..."]`。
 2. **Greedy Sampling (T=0.0)**：
    - 严禁引入文章中没有提到的深海菌种或温度数值作为既定事实，未提到的信息必须显式标注 `[Exact Quote: NONE FOUND - Unsubstantiated]`。
+
+---
+
+## Test Case 3: 领读拆解与顶刊学术句式萃取 (Mode 3: Guided Walkthrough & Sentence Formula Extraction)
+
+### 假想/测试文献片段
+- **Title**: *Dynamic Turnover and Molecular Recalcitrance of Dissolved Organic Matter in the Deep Pacific*
+- **Introduction Snippet [Section 1 / Page 1]**: "While the vast reservoir of oceanic refractory dissolved organic carbon (RDOC) has traditionally been regarded as an inert byproduct of surface biological production, emerging radiocarbon and molecular data reveal unexpected temporal variability in the deep North Pacific. However, the exact biochemical mechanisms underpinning this non-conservative behavior remain largely enigmatic, obscured by the analytical challenges of isolating ultra-dilute compounds. Here, using ultrahigh-resolution mass spectrometry coupled with compound-specific isotope analysis, we demonstrate that microbial community metabolism continuously synthesizes structurally unique recalcitrant molecules in the bathypelagic zone."
+
+### 预期 Agent 教学与句式萃取指标 (Evaluation Rubric)
+1. **Step 1: 精选段落与逐句逻辑链透视**：
+   - 完整保留并展示英文原段 `[Section 1 / Page 1]`。
+   - 逐句透视 4 层结构：Sentence 1 (宏大共识与反常悬念) -> Sentence 2 (现有方法局限与知识断层) -> Sentence 3 (破局手段与核心发现)。
+2. **Step 2: 顶刊学术句式公式 (Sentence Formula)**：
+   - 提炼高质量带槽位模板（如 `While [A] has traditionally been regarded as [B], emerging [Data/Evidence] reveal unexpected [Phenomenon] in [Target System]...`）。
+   - 标注适用语境与修辞功能。
+3. **Step 3: 迁移写作实战挑战与红笔点评 (Writing Challenge & Mentor Polish)**：
+   - 提出迁移写作任务；当用户提交仿写后，输出 `### ✍️ 【导师写作红笔点评与润色】`，给出 Original 对比与 Polished 地道英文修改建议。
+
